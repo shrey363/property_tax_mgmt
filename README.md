@@ -205,36 +205,38 @@ tax_record (1) ──────< payment (M)
 
 ### User Interface Design
 
-The frontend uses **Tkinter** with a custom dark-gold theme inspired by government civic portals.
+The frontend uses **Tkinter** with a custom clean light theme.
 
 **Colour Palette:**
 | Name         | Hex       | Usage              |
 |--------------|-----------|--------------------|
-| Background   | `#0f1923` | Window base        |
-| Card         | `#1a2535` | Form cards         |
-| Field        | `#243040` | Input backgrounds  |
-| Accent Gold  | `#f0a500` | Headings, buttons  |
-| Accent Green | `#3dcc7e` | Success states     |
-| Danger Red   | `#e05252` | Errors, overdue    |
-| Text Light   | `#e8edf3` | Body text          |
-| Text Muted   | `#7a8fa6` | Labels, hints      |
+| Background   | `#f8fafc` | Window base        |
+| Card         | `#ffffff` | Form cards         |
+| Field        | `#f1f5f9` | Input backgrounds  |
+| Sidebar      | `#f1f5f9` | Sidebar background |
+| Accent Gold  | `#d97706` | Headings, buttons  |
+| Accent Green | `#059669` | Success states     |
+| Danger Red   | `#ef4444` | Errors, overdue    |
+| Text Light   | `#1e293b` | Main body text     |
+| Text Muted   | `#64748b` | Labels, hints      |
 
 **Fonts:** Georgia (headings), Segoe UI (body)
 
 ---
 
-### Forms Used
+### Forms & Pages Used
 
-| Form                 | File         | Purpose                           |
+| Form/Page            | File         | Purpose                           |
 |----------------------|--------------|-----------------------------------|
 | Login Form           | main.py      | Username/password authentication  |
 | Dashboard            | dashboard.py | KPI cards + quick navigation      |
-| Property Form        | forms.py     | Register new property             |
-| Owner Form           | forms.py     | Register new owner                |
+| Wards Page           | dashboard.py | List and manage registered wards  |
+| Property Form/Page   | forms.py/dash| Register & list properties        |
+| Owner Form/Page      | forms.py/dash| Register & list owners            |
 | Tax Generate Form    | forms.py     | Call sp_calculate_tax             |
 | Payment Form         | forms.py     | Call sp_record_payment            |
 | User Form            | forms.py     | Admin: create system users        |
-| Ward Form            | forms.py     | Admin: add wards                  |
+| Ward Form            | forms.py     | Admin/Clerk: add wards            |
 
 ---
 
@@ -246,6 +248,7 @@ The frontend uses **Tkinter** with a custom dark-gold theme inspired by governme
      ▼ (successful auth)
 [Dashboard]
      │
+     ├── 🏙 Wards ────────► [Ward List]     ──► [Add Ward Form]
      ├── 🏘 Properties ──► [Property List] ──► [Add Property Form]
      ├── 👤 Owners ───────► [Owner List]   ──► [Add Owner Form]
      ├── 🗂 Tax Records ──► [Tax List]     ──► [Generate Tax Form]
@@ -255,7 +258,7 @@ The frontend uses **Tkinter** with a custom dark-gold theme inspired by governme
      │                  ──► [Ward Collection Tab]
      │                  ──► [Annual Revenue Tab]
      └── 🔧 Admin Panel ──► [User Management]
-                        ──► [Ward Management]
+                        ──► [Wards Navigation Link]
                         ──► [Run Tax Calc]
 ```
 
@@ -264,7 +267,7 @@ The frontend uses **Tkinter** with a custom dark-gold theme inspired by governme
 ### Example Screens
 
 #### Login Page
-- Full-screen centred dark card
+- Full-screen centred light card
 - Username + password fields with show/hide toggle
 - DB connectivity warning if MySQL is unreachable
 - Default credentials shown in footer
@@ -275,8 +278,8 @@ The frontend uses **Tkinter** with a custom dark-gold theme inspired by governme
 - Bottom: Recent payments table (last 10)
 
 #### Registration Form
-- Dark card dialog (modal)
-- Labelled entry fields with gold accent
+- Light card dialog (modal) with thin gold border
+- Labelled entry fields on light gray background with gold accent
 - Required field markers (*)
 - Inline status/error messages
 - Save / Cancel buttons
