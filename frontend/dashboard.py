@@ -8,14 +8,14 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from db_config import execute_query
 
-BG_DARK    = "#0f1923"
-BG_CARD    = "#1a2535"
-BG_SIDEBAR = "#111e2c"
-ACCENT     = "#f0a500"
-ACCENT2    = "#3dcc7e"
-TEXT_LIGHT = "#e8edf3"
-TEXT_MUTED = "#7a8fa6"
-DANGER     = "#e05252"
+BG_DARK    = "#f8fafc"
+BG_CARD    = "#ffffff"
+BG_SIDEBAR = "#f1f5f9"
+ACCENT     = "#d97706"
+ACCENT2    = "#059669"
+TEXT_LIGHT = "#1e293b"
+TEXT_MUTED = "#64748b"
+DANGER     = "#ef4444"
 FONT_H1    = ("Georgia", 18, "bold")
 FONT_H2    = ("Georgia", 13, "bold")
 FONT_BODY  = ("Segoe UI", 10)
@@ -218,12 +218,12 @@ class DashboardWindow(tk.Toplevel):
         actions.pack(fill="x", padx=20)
         if self.user["role"] in ("admin", "clerk"):
             tk.Button(actions, text="+ Add Property",
-                      font=FONT_BOLD, bg=ACCENT, fg=BG_DARK,
+                      font=FONT_BOLD, bg=ACCENT, fg="#ffffff",
                       relief="flat", cursor="hand2",
                       command=self._add_property_form
                       ).pack(side="left", padx=(0, 8), ipady=4, ipadx=8)
             tk.Button(actions, text="❌ Delete Selected",
-                      font=FONT_BOLD, bg=DANGER, fg=TEXT_LIGHT,
+                      font=FONT_BOLD, bg=DANGER, fg="#ffffff",
                       relief="flat", cursor="hand2",
                       command=self._delete_property
                       ).pack(side="left", padx=(0, 8), ipady=4, ipadx=8)
@@ -304,12 +304,12 @@ class DashboardWindow(tk.Toplevel):
         actions.pack(fill="x", padx=20)
         if self.user["role"] in ("admin", "clerk"):
             tk.Button(actions, text="+ Add Owner",
-                      font=FONT_BOLD, bg=ACCENT, fg=BG_DARK,
+                      font=FONT_BOLD, bg=ACCENT, fg="#ffffff",
                       relief="flat", cursor="hand2",
                       command=self._add_owner_form
                       ).pack(side="left", ipady=4, ipadx=8)
             tk.Button(actions, text="❌ Delete Selected",
-                      font=FONT_BOLD, bg=DANGER, fg=TEXT_LIGHT,
+                      font=FONT_BOLD, bg=DANGER, fg="#ffffff",
                       relief="flat", cursor="hand2",
                       command=self._delete_owner
                       ).pack(side="left", padx=8, ipady=4, ipadx=8)
@@ -344,17 +344,17 @@ class DashboardWindow(tk.Toplevel):
         actions.pack(fill="x", padx=20)
         if self.user["role"] in ("admin", "clerk"):
             tk.Button(actions, text="+ Generate Tax",
-                      font=FONT_BOLD, bg=ACCENT, fg=BG_DARK,
+                      font=FONT_BOLD, bg=ACCENT, fg="#ffffff",
                       relief="flat", cursor="hand2",
                       command=self._generate_tax_form
                       ).pack(side="left", ipady=4, ipadx=8)
             tk.Button(actions, text="⚠ Apply Penalties",
-                      font=FONT_BOLD, bg=DANGER, fg=TEXT_LIGHT,
+                      font=FONT_BOLD, bg=DANGER, fg="#ffffff",
                       relief="flat", cursor="hand2",
                       command=self._apply_penalties
                       ).pack(side="left", padx=8, ipady=4, ipadx=8)
             tk.Button(actions, text="❌ Delete Selected",
-                      font=FONT_BOLD, bg=DANGER, fg=TEXT_LIGHT,
+                      font=FONT_BOLD, bg=DANGER, fg="#ffffff",
                       relief="flat", cursor="hand2",
                       command=self._delete_tax_record
                       ).pack(side="left", padx=8, ipady=4, ipadx=8)
@@ -406,12 +406,12 @@ class DashboardWindow(tk.Toplevel):
         actions.pack(fill="x", padx=20)
         if self.user["role"] in ("admin", "clerk"):
             tk.Button(actions, text="+ Record Payment",
-                      font=FONT_BOLD, bg=ACCENT2, fg=BG_DARK,
+                      font=FONT_BOLD, bg=ACCENT2, fg="#ffffff",
                       relief="flat", cursor="hand2",
                       command=self._record_payment_form
                       ).pack(side="left", ipady=4, ipadx=8)
             tk.Button(actions, text="❌ Delete Selected",
-                      font=FONT_BOLD, bg=DANGER, fg=TEXT_LIGHT,
+                      font=FONT_BOLD, bg=DANGER, fg="#ffffff",
                       relief="flat", cursor="hand2",
                       command=self._delete_payment
                       ).pack(side="left", padx=8, ipady=4, ipadx=8)
@@ -566,7 +566,7 @@ class DashboardWindow(tk.Toplevel):
                  font=FONT_H2, bg=BG_DARK, fg=TEXT_LIGHT).pack(side="left")
 
         tk.Button(user_actions, text="❌ Delete Selected User",
-                  font=FONT_BOLD, bg=DANGER, fg=TEXT_LIGHT,
+                  font=FONT_BOLD, bg=DANGER, fg="#ffffff",
                   relief="flat", cursor="hand2",
                   command=self._delete_user
                   ).pack(side="right", ipady=2, ipadx=8)
@@ -617,8 +617,8 @@ class DashboardWindow(tk.Toplevel):
                         font=("Segoe UI", 9, "bold"),
                         relief="flat")
         style.map("Custom.Treeview",
-                  background=[("selected", "#2a3f5f")],
-                  foreground=[("selected", ACCENT)])
+                  background=[("selected", "#dbeafe")],
+                  foreground=[("selected", "#1e293b")])
 
         frame = tk.Frame(parent, bg=BG_DARK)
         frame.pack(fill="both", expand=True, padx=16, pady=8)

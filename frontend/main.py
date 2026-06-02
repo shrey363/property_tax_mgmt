@@ -10,15 +10,15 @@ import hashlib
 from db_config import execute_query, verify_connection
 
 # ── Theme colours ──────────────────────────────────────────
-BG_DARK      = "#0f1923"
-BG_CARD      = "#1a2535"
-BG_FIELD     = "#243040"
-ACCENT       = "#f0a500"
-ACCENT_HOVER = "#ffbf33"
-TEXT_LIGHT   = "#e8edf3"
-TEXT_MUTED   = "#7a8fa6"
-DANGER       = "#e05252"
-SUCCESS      = "#3dcc7e"
+BG_DARK      = "#f8fafc"
+BG_CARD      = "#ffffff"
+BG_FIELD     = "#f1f5f9"
+ACCENT       = "#d97706"
+ACCENT_HOVER = "#b45309"
+TEXT_LIGHT   = "#1e293b"
+TEXT_MUTED   = "#64748b"
+DANGER       = "#ef4444"
+SUCCESS      = "#10b981"
 FONT_TITLE   = ("Georgia", 26, "bold")
 FONT_LABEL   = ("Segoe UI", 10)
 FONT_BUTTON  = ("Segoe UI", 10, "bold")
@@ -111,7 +111,7 @@ class LoginWindow(tk.Tk):
         # Login button
         self.login_btn = tk.Button(card, text="LOGIN",
                                    font=FONT_BUTTON,
-                                   bg=ACCENT, fg=BG_DARK,
+                                   bg=ACCENT, fg="#ffffff",
                                    activebackground=ACCENT_HOVER,
                                    relief="flat", bd=0,
                                    cursor="hand2",

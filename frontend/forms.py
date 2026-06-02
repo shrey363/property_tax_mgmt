@@ -9,18 +9,19 @@ from tkinter import ttk, messagebox
 from db_config import execute_query, call_procedure
 import hashlib
 
-BG_DARK    = "#0f1923"
-BG_CARD    = "#1a2535"
-BG_FIELD   = "#243040"
-ACCENT     = "#f0a500"
-ACCENT2    = "#3dcc7e"
-TEXT_LIGHT = "#e8edf3"
-TEXT_MUTED = "#7a8fa6"
-DANGER     = "#e05252"
-FONT_BODY  = ("Segoe UI", 10)
-FONT_BOLD  = ("Segoe UI", 10, "bold")
-FONT_LABEL = ("Segoe UI", 9)
-FONT_SMALL = ("Segoe UI", 8)
+BG_DARK      = "#f8fafc"
+BG_CARD      = "#ffffff"
+BG_FIELD     = "#f1f5f9"
+ACCENT       = "#d97706"
+ACCENT_HOVER = "#b45309"
+ACCENT2      = "#059669"
+TEXT_LIGHT   = "#1e293b"
+TEXT_MUTED   = "#64748b"
+DANGER       = "#ef4444"
+FONT_BODY    = ("Segoe UI", 10)
+FONT_BOLD    = ("Segoe UI", 10, "bold")
+FONT_LABEL   = ("Segoe UI", 9)
+FONT_SMALL   = ("Segoe UI", 8)
 
 
 # ── Base dialog ───────────────────────────────────────────
@@ -75,8 +76,8 @@ class BaseDialog(tk.Toplevel):
         btn_frame = tk.Frame(parent, bg=parent["bg"])
         btn_frame.pack(fill="x", padx=10, pady=14)
         tk.Button(btn_frame, text=label, font=FONT_BOLD,
-                  bg=ACCENT, fg=BG_DARK,
-                  activebackground="#ffbf33",
+                  bg=ACCENT, fg="#ffffff",
+                  activebackground=ACCENT_HOVER,
                   relief="flat", cursor="hand2",
                   command=cmd).pack(side="right", ipady=6, ipadx=16)
         tk.Button(btn_frame, text="✕ Cancel", font=FONT_BODY,
