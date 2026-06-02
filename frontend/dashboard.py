@@ -82,6 +82,7 @@ class DashboardWindow(tk.Toplevel):
         # Navigation items  (icon, label, command, required_roles)
         nav_items = [
             ("🏠", "Dashboard",        self._show_home,         None),
+            ("🏙", "Wards",            self._show_wards,        None),
             ("🏘", "Properties",       self._show_properties,   None),
             ("👤", "Owners",           self._show_owners,       None),
             ("🗂", "Tax Records",      self._show_tax_records,  None),
@@ -335,6 +336,67 @@ class DashboardWindow(tk.Toplevel):
         from forms import OwnerForm
         OwnerForm(self, self.user)
 
+    # ─── Wards page ──────────────────────────────────────
+    def _show_wards(self):
+        self._clear_content()
+        self._page_header("🏙", "Wards", "Registered Wards & Zone Officers")
+
+        actions = tk.Frame(self.content, bg=BG_DARK, pady=8)
+        actions.pack(fill="x", padx=20)
+        if self.user["role"] in ("admin", "clerk"):
+            tk.Button(actions, text="+ Add Ward",
+                      font=FONT_BOLD, bg=ACCENT, fg="#ffffff",
+                      relief="flat", cursor="hand2",
+                      command=self._add_ward_form
+                      ).pack(side="left", ipady=4, ipadx=8)
+            tk.Button(actions, text="❌ Delete Selected",
+                      font=FONT_BOLD, bg=DANGER, fg="#ffffff",
+                      relief="flat", cursor="hand2",
+                      command=self._delete_ward
+                      ).pack(side="left", padx=8, ipady=4, ipadx=8)
+
+        try:
+            rows = execute_query(
+                "SELECT ward_id, ward_number, ward_name, zone, "
+                "officer_name, contact_email FROM ward ORDER BY ward_number",
+                fetch=True
+            )
+            data = [[r["ward_id"], r["ward_number"], r["ward_name"],
+                     r["zone"], r["officer_name"], r["contact_email"]] for r in rows]
+            self.ward_tree = self._build_treeview(
+                self.content,
+                columns=["ID", "Ward #", "Ward Name", "Zone", "Officer", "Contact Email"],
+                rows=data, height=20
+            )
+        except Exception as e:
+            messagebox.showerror("Database Error", f"Failed to load wards: {e}")
+
+    def _add_ward_form(self):
+        from forms import WardForm
+        WardForm(self, self.user)
+
+    def _delete_ward(self):
+        if not hasattr(self, "ward_tree"):
+            return
+        selected = self.ward_tree.selection()
+        if not selected:
+            messagebox.showwarning("Selection Required", "Please select a ward from the list.")
+            return
+        values = self.ward_tree.item(selected[0], "values")
+        ward_id = values[0]
+        ward_num = values[1]
+        ward_name = values[2]
+        
+        if not messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete ward '{ward_name}' (Ward #: {ward_num})?"):
+            return
+        
+        try:
+            execute_query("DELETE FROM ward WHERE ward_id = %s", (ward_id,))
+            messagebox.showinfo("Success", f"Ward '{ward_name}' deleted successfully.")
+            self._show_wards()
+        except Exception as e:
+            messagebox.showerror("Error", f"Cannot delete ward. It may have registered properties.\nDetail: {e}")
+
     # ─── Tax Records page ────────────────────────────────
     def _show_tax_records(self):
         self._clear_content()
@@ -546,13 +608,13 @@ class DashboardWindow(tk.Toplevel):
 
         buttons = [
             ("👥 Manage Users",     self._manage_users,  ACCENT),
-            ("🏙 Manage Wards",     self._manage_wards,  ACCENT),
+            ("🏙 Manage Wards",     self._show_wards,    ACCENT),
             ("🔄 Run Tax Calc",     self._run_tax_calc,  ACCENT2),
             ("⚠ Apply Penalties",  self._apply_penalties, DANGER),
         ]
         for i, (label, cmd, color) in enumerate(buttons):
             tk.Button(grid, text=label, font=FONT_BOLD,
-                      bg=color, fg=BG_DARK,
+                      bg=color, fg="#ffffff",
                       activebackground=BG_CARD,
                       relief="flat", cursor="hand2",
                       command=cmd, width=20
@@ -592,10 +654,6 @@ class DashboardWindow(tk.Toplevel):
     def _manage_users(self):
         from forms import UserForm
         UserForm(self, self.user)
-
-    def _manage_wards(self):
-        from forms import WardForm
-        WardForm(self, self.user)
 
     def _run_tax_calc(self):
         from forms import TaxGenerateForm

@@ -489,7 +489,10 @@ class WardForm(BaseDialog):
                 (name, number, zone, officer, email)
             )
             messagebox.showinfo("Success", f"Ward '{name}' added.")
-            self.parent._show_admin()
+            if hasattr(self.parent, "_show_wards"):
+                self.parent._show_wards()
+            elif hasattr(self.parent, "_show_admin"):
+                self.parent._show_admin()
             self.destroy()
         except Exception as e:
             self.status_var.set(str(e))
