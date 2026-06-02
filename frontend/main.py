@@ -130,7 +130,7 @@ class LoginWindow(tk.Tk):
         footer = tk.Frame(self, bg=BG_DARK)
         footer.pack(fill="x", pady=12)
         tk.Label(footer,
-                 text="Default: admin / Admin@123  |  clerk1 / Clerk@123",
+                 text="Default: admin / admin123  |  clerk1 / Clerk@123",
                  font=FONT_SMALL, bg=BG_DARK, fg=TEXT_MUTED).pack()
 
         # Bind Enter key
@@ -156,23 +156,27 @@ class LoginWindow(tk.Tk):
 
         pw_hash = hashlib.sha256(password.encode()).hexdigest()
 
-        rows = execute_query(
-            "SELECT user_id, full_name, role FROM users "
-            "WHERE username=%s AND password_hash=%s AND is_active=1",
-            (username, pw_hash),
-            fetch=True
-        )
+        try:
+            rows = execute_query(
+                "SELECT user_id, full_name, role FROM users "
+                "WHERE username=%s AND password_hash=%s AND is_active=1",
+                (username, pw_hash),
+                fetch=True
+            )
 
-        if not rows:
-            self.status_var.set("❌ Invalid credentials. Please try again.")
+            if not rows:
+                self.status_var.set("❌ Invalid credentials. Please try again.")
+                return
+
+            user = rows[0]
+            # Update last_login
+            execute_query(
+                "UPDATE users SET last_login=NOW() WHERE user_id=%s",
+                (user["user_id"],)
+            )
+        except Exception as e:
+            messagebox.showerror("Database Error", f"Failed to connect or login: {e}")
             return
-
-        user = rows[0]
-        # Update last_login
-        execute_query(
-            "UPDATE users SET last_login=NOW() WHERE user_id=%s",
-            (user["user_id"],)
-        )
 
         self.withdraw()
         from dashboard import DashboardWindow

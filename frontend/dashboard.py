@@ -142,27 +142,30 @@ class DashboardWindow(tk.Toplevel):
         kpi_frame = tk.Frame(self.content, bg=BG_DARK, pady=16)
         kpi_frame.pack(fill="x", padx=20)
 
-        kpis = self._get_kpis()
-        for i, (label, value, color) in enumerate(kpis):
-            card = tk.Frame(kpi_frame, bg=BG_CARD, padx=18, pady=14,
-                            highlightbackground=color, highlightthickness=2)
-            card.grid(row=0, column=i, padx=8, sticky="nsew")
-            kpi_frame.columnconfigure(i, weight=1)
-            tk.Label(card, text=str(value), font=("Georgia", 22, "bold"),
-                     bg=BG_CARD, fg=color).pack()
-            tk.Label(card, text=label, font=FONT_SMALL,
-                     bg=BG_CARD, fg=TEXT_MUTED).pack()
+        try:
+            kpis = self._get_kpis()
+            for i, (label, value, color) in enumerate(kpis):
+                card = tk.Frame(kpi_frame, bg=BG_CARD, padx=18, pady=14,
+                                highlightbackground=color, highlightthickness=2)
+                card.grid(row=0, column=i, padx=8, sticky="nsew")
+                kpi_frame.columnconfigure(i, weight=1)
+                tk.Label(card, text=str(value), font=("Georgia", 22, "bold"),
+                         bg=BG_CARD, fg=color).pack()
+                tk.Label(card, text=label, font=FONT_SMALL,
+                         bg=BG_CARD, fg=TEXT_MUTED).pack()
 
-        # Recent payments table
-        tk.Label(self.content, text="Recent Payments",
-                 font=FONT_H2, bg=BG_DARK, fg=TEXT_LIGHT).pack(
-                 anchor="w", padx=24, pady=(12, 4))
-        self._build_treeview(
-            self.content,
-            columns=["Receipt", "Date", "Owner", "Property", "Amount", "Mode"],
-            rows=self._get_recent_payments(),
-            height=8
-        )
+            # Recent payments table
+            tk.Label(self.content, text="Recent Payments",
+                     font=FONT_H2, bg=BG_DARK, fg=TEXT_LIGHT).pack(
+                     anchor="w", padx=24, pady=(12, 4))
+            self._build_treeview(
+                self.content,
+                columns=["Receipt", "Date", "Owner", "Property", "Amount", "Mode"],
+                rows=self._get_recent_payments(),
+                height=8
+            )
+        except Exception as e:
+            messagebox.showerror("Database Error", f"Failed to load dashboard: {e}")
 
     def _get_kpis(self):
         rows = execute_query(
@@ -219,6 +222,11 @@ class DashboardWindow(tk.Toplevel):
                       relief="flat", cursor="hand2",
                       command=self._add_property_form
                       ).pack(side="left", padx=(0, 8), ipady=4, ipadx=8)
+            tk.Button(actions, text="❌ Delete Selected",
+                      font=FONT_BOLD, bg=DANGER, fg=TEXT_LIGHT,
+                      relief="flat", cursor="hand2",
+                      command=self._delete_property
+                      ).pack(side="left", padx=(0, 8), ipady=4, ipadx=8)
 
         # Search
         tk.Label(actions, text="Search:", font=FONT_BODY,
@@ -232,49 +240,55 @@ class DashboardWindow(tk.Toplevel):
                   fg=ACCENT, relief="flat", cursor="hand2",
                   command=self._search_properties).pack(side="left")
 
-        rows = execute_query(
-            "SELECT p.property_id, p.property_number, "
-            "CONCAT(o.first_name,' ',o.last_name) AS owner, "
-            "w.ward_name, p.property_type, p.area_sqft, "
-            "p.annual_value, p.is_active "
-            "FROM property p "
-            "JOIN owner o ON p.owner_id=o.owner_id "
-            "JOIN ward  w ON p.ward_id =w.ward_id "
-            "ORDER BY p.property_number",
-            fetch=True
-        )
-        data = [[r["property_number"], r["owner"], r["ward_name"],
-                 r["property_type"], f"{r['area_sqft']:,.0f} sqft",
-                 f"₹{r['annual_value']:,.0f}",
-                 "Active" if r["is_active"] else "Inactive"] for r in rows]
-        self.prop_tree = self._build_treeview(
-            self.content,
-            columns=["Prop #", "Owner", "Ward", "Type", "Area", "Annual Value", "Status"],
-            rows=data, height=18
-        )
+        try:
+            rows = execute_query(
+                "SELECT p.property_id, p.property_number, "
+                "CONCAT(o.first_name,' ',o.last_name) AS owner, "
+                "w.ward_name, p.property_type, p.area_sqft, "
+                "p.annual_value, p.is_active "
+                "FROM property p "
+                "JOIN owner o ON p.owner_id=o.owner_id "
+                "JOIN ward  w ON p.ward_id =w.ward_id "
+                "ORDER BY p.property_number",
+                fetch=True
+            )
+            data = [[r["property_number"], r["owner"], r["ward_name"],
+                     r["property_type"], f"{r['area_sqft']:,.0f} sqft",
+                     f"₹{r['annual_value']:,.0f}",
+                     "Active" if r["is_active"] else "Inactive"] for r in rows]
+            self.prop_tree = self._build_treeview(
+                self.content,
+                columns=["Prop #", "Owner", "Ward", "Type", "Area", "Annual Value", "Status"],
+                rows=data, height=18
+            )
+        except Exception as e:
+            messagebox.showerror("Database Error", f"Failed to load properties: {e}")
 
     def _search_properties(self):
         q = self.prop_search_var.get().strip()
-        rows = execute_query(
-            "SELECT p.property_number, "
-            "CONCAT(o.first_name,' ',o.last_name) AS owner, "
-            "w.ward_name, p.property_type, p.area_sqft, p.annual_value, p.is_active "
-            "FROM property p "
-            "JOIN owner o ON p.owner_id=o.owner_id "
-            "JOIN ward  w ON p.ward_id =w.ward_id "
-            "WHERE p.property_number LIKE %s OR o.last_name LIKE %s OR w.ward_name LIKE %s",
-            (f"%{q}%", f"%{q}%", f"%{q}%"), fetch=True
-        )
-        data = [[r["property_number"], r["owner"], r["ward_name"],
-                 r["property_type"], f"{r['area_sqft']:,.0f} sqft",
-                 f"₹{r['annual_value']:,.0f}",
-                 "Active" if r["is_active"] else "Inactive"] for r in rows]
-        # refresh tree
-        if hasattr(self, "prop_tree"):
-            for item in self.prop_tree.get_children():
-                self.prop_tree.delete(item)
-            for row in data:
-                self.prop_tree.insert("", "end", values=row)
+        try:
+            rows = execute_query(
+                "SELECT p.property_number, "
+                "CONCAT(o.first_name,' ',o.last_name) AS owner, "
+                "w.ward_name, p.property_type, p.area_sqft, p.annual_value, p.is_active "
+                "FROM property p "
+                "JOIN owner o ON p.owner_id=o.owner_id "
+                "JOIN ward  w ON p.ward_id =w.ward_id "
+                "WHERE p.property_number LIKE %s OR CONCAT(o.first_name, ' ', o.last_name) LIKE %s OR w.ward_name LIKE %s",
+                (f"%{q}%", f"%{q}%", f"%{q}%"), fetch=True
+            )
+            data = [[r["property_number"], r["owner"], r["ward_name"],
+                     r["property_type"], f"{r['area_sqft']:,.0f} sqft",
+                     f"₹{r['annual_value']:,.0f}",
+                     "Active" if r["is_active"] else "Inactive"] for r in rows]
+            # refresh tree
+            if hasattr(self, "prop_tree"):
+                for item in self.prop_tree.get_children():
+                    self.prop_tree.delete(item)
+                for row in data:
+                    self.prop_tree.insert("", "end", values=row)
+        except Exception as e:
+            messagebox.showerror("Database Error", f"Search failed: {e}")
 
     # ─── Add Property form ───────────────────────────────
     def _add_property_form(self):
@@ -294,20 +308,28 @@ class DashboardWindow(tk.Toplevel):
                       relief="flat", cursor="hand2",
                       command=self._add_owner_form
                       ).pack(side="left", ipady=4, ipadx=8)
+            tk.Button(actions, text="❌ Delete Selected",
+                      font=FONT_BOLD, bg=DANGER, fg=TEXT_LIGHT,
+                      relief="flat", cursor="hand2",
+                      command=self._delete_owner
+                      ).pack(side="left", padx=8, ipady=4, ipadx=8)
 
-        rows = execute_query(
-            "SELECT owner_id, CONCAT(first_name,' ',last_name) AS name, "
-            "email, phone, aadhar_number, "
-            "DATE(created_at) AS since FROM owner ORDER BY last_name",
-            fetch=True
-        )
-        data = [[r["owner_id"], r["name"], r["email"],
-                 r["phone"], r["aadhar_number"], str(r["since"])] for r in rows]
-        self._build_treeview(
-            self.content,
-            columns=["ID", "Name", "Email", "Phone", "Aadhar", "Since"],
-            rows=data, height=20
-        )
+        try:
+            rows = execute_query(
+                "SELECT owner_id, CONCAT(first_name,' ',last_name) AS name, "
+                "email, phone, aadhar_number, "
+                "DATE(created_at) AS since FROM owner ORDER BY last_name",
+                fetch=True
+            )
+            data = [[r["owner_id"], r["name"], r["email"],
+                     r["phone"], r["aadhar_number"], str(r["since"])] for r in rows]
+            self.owner_tree = self._build_treeview(
+                self.content,
+                columns=["ID", "Name", "Email", "Phone", "Aadhar", "Since"],
+                rows=data, height=20
+            )
+        except Exception as e:
+            messagebox.showerror("Database Error", f"Failed to load owners: {e}")
 
     def _add_owner_form(self):
         from forms import OwnerForm
@@ -331,26 +353,34 @@ class DashboardWindow(tk.Toplevel):
                       relief="flat", cursor="hand2",
                       command=self._apply_penalties
                       ).pack(side="left", padx=8, ipady=4, ipadx=8)
+            tk.Button(actions, text="❌ Delete Selected",
+                      font=FONT_BOLD, bg=DANGER, fg=TEXT_LIGHT,
+                      relief="flat", cursor="hand2",
+                      command=self._delete_tax_record
+                      ).pack(side="left", padx=8, ipady=4, ipadx=8)
 
-        rows = execute_query(
-            "SELECT t.tax_id, p.property_number, t.financial_year, "
-            "t.tax_amount, t.penalty_amount, t.rebate_amount, "
-            "t.total_due, t.due_date, t.status "
-            "FROM tax_record t "
-            "JOIN property p ON t.property_id=p.property_id "
-            "ORDER BY t.financial_year DESC, p.property_number",
-            fetch=True
-        )
-        data = [[r["tax_id"], r["property_number"], r["financial_year"],
-                 f"₹{r['tax_amount']:,.2f}", f"₹{r['penalty_amount']:,.2f}",
-                 f"₹{r['rebate_amount']:,.2f}", f"₹{r['total_due']:,.2f}",
-                 str(r["due_date"]), r["status"]] for r in rows]
-        self._build_treeview(
-            self.content,
-            columns=["ID", "Property", "FY", "Tax", "Penalty",
-                     "Rebate", "Total Due", "Due Date", "Status"],
-            rows=data, height=18
-        )
+        try:
+            rows = execute_query(
+                "SELECT t.tax_id, p.property_number, t.financial_year, "
+                "t.tax_amount, t.penalty_amount, t.rebate_amount, "
+                "t.total_due, t.due_date, t.status "
+                "FROM tax_record t "
+                "JOIN property p ON t.property_id=p.property_id "
+                "ORDER BY t.financial_year DESC, p.property_number",
+                fetch=True
+            )
+            data = [[r["tax_id"], r["property_number"], r["financial_year"],
+                     f"₹{r['tax_amount']:,.2f}", f"₹{r['penalty_amount']:,.2f}",
+                     f"₹{r['rebate_amount']:,.2f}", f"₹{r['total_due']:,.2f}",
+                     str(r["due_date"]), r["status"]] for r in rows]
+            self.tax_tree = self._build_treeview(
+                self.content,
+                columns=["ID", "Property", "FY", "Tax", "Penalty",
+                         "Rebate", "Total Due", "Due Date", "Status"],
+                rows=data, height=18
+            )
+        except Exception as e:
+            messagebox.showerror("Database Error", f"Failed to load tax records: {e}")
 
     def _generate_tax_form(self):
         from forms import TaxGenerateForm
@@ -380,29 +410,37 @@ class DashboardWindow(tk.Toplevel):
                       relief="flat", cursor="hand2",
                       command=self._record_payment_form
                       ).pack(side="left", ipady=4, ipadx=8)
+            tk.Button(actions, text="❌ Delete Selected",
+                      font=FONT_BOLD, bg=DANGER, fg=TEXT_LIGHT,
+                      relief="flat", cursor="hand2",
+                      command=self._delete_payment
+                      ).pack(side="left", padx=8, ipady=4, ipadx=8)
 
-        rows = execute_query(
-            "SELECT pay.receipt_number, DATE(pay.payment_date) AS dt, "
-            "p.property_number, t.financial_year, "
-            "CONCAT(o.first_name,' ',o.last_name) AS owner, "
-            "pay.amount_paid, pay.payment_mode, pay.transaction_ref "
-            "FROM payment pay "
-            "JOIN tax_record t ON pay.tax_id=t.tax_id "
-            "JOIN property p ON t.property_id=p.property_id "
-            "JOIN owner o ON p.owner_id=o.owner_id "
-            "ORDER BY pay.payment_date DESC",
-            fetch=True
-        )
-        data = [[r["receipt_number"], str(r["dt"]), r["property_number"],
-                 r["financial_year"], r["owner"],
-                 f"₹{r['amount_paid']:,.2f}", r["payment_mode"],
-                 r["transaction_ref"] or "—"] for r in rows]
-        self._build_treeview(
-            self.content,
-            columns=["Receipt", "Date", "Property", "FY", "Owner",
-                     "Amount", "Mode", "Transaction Ref"],
-            rows=data, height=20
-        )
+        try:
+            rows = execute_query(
+                "SELECT pay.receipt_number, DATE(pay.payment_date) AS dt, "
+                "p.property_number, t.financial_year, "
+                "CONCAT(o.first_name,' ',o.last_name) AS owner, "
+                "pay.amount_paid, pay.payment_mode, pay.transaction_ref "
+                "FROM payment pay "
+                "JOIN tax_record t ON pay.tax_id=t.tax_id "
+                "JOIN property p ON t.property_id=p.property_id "
+                "JOIN owner o ON p.owner_id=o.owner_id "
+                "ORDER BY pay.payment_date DESC",
+                fetch=True
+            )
+            data = [[r["receipt_number"], str(r["dt"]), r["property_number"],
+                     r["financial_year"], r["owner"],
+                     f"₹{r['amount_paid']:,.2f}", r["payment_mode"],
+                     r["transaction_ref"] or "—"] for r in rows]
+            self.pay_tree = self._build_treeview(
+                self.content,
+                columns=["Receipt", "Date", "Property", "FY", "Owner",
+                         "Amount", "Mode", "Transaction Ref"],
+                rows=data, height=20
+            )
+        except Exception as e:
+            messagebox.showerror("Database Error", f"Failed to load payments: {e}")
 
     def _record_payment_form(self):
         from forms import PaymentForm
@@ -432,62 +470,71 @@ class DashboardWindow(tk.Toplevel):
         self._report_annual_revenue(t3)
 
     def _report_defaulters(self, parent):
-        rows = execute_query(
-            "SELECT property_number, owner_name, phone, ward_name, "
-            "financial_year, total_due, penalty_amount, "
-            "due_date, status, days_overdue FROM v_defaulters",
-            fetch=True
-        )
-        data = [[r["property_number"], r["owner_name"], r["phone"],
-                 r["ward_name"], r["financial_year"],
-                 f"₹{r['total_due']:,.2f}", str(r["due_date"]),
-                 r["status"], str(r["days_overdue"])] for r in rows]
-        self._build_treeview(
-            parent,
-            columns=["Property", "Owner", "Phone", "Ward", "FY",
-                     "Due", "Due Date", "Status", "Days Overdue"],
-            rows=data, height=16
-        )
+        try:
+            rows = execute_query(
+                "SELECT property_number, owner_name, phone, ward_name, "
+                "financial_year, total_due, penalty_amount, "
+                "due_date, status, days_overdue FROM v_defaulters",
+                fetch=True
+            )
+            data = [[r["property_number"], r["owner_name"], r["phone"],
+                     r["ward_name"], r["financial_year"],
+                     f"₹{r['total_due']:,.2f}", str(r["due_date"]),
+                     r["status"], str(r["days_overdue"])] for r in rows]
+            self._build_treeview(
+                parent,
+                columns=["Property", "Owner", "Phone", "Ward", "FY",
+                         "Due", "Due Date", "Status", "Days Overdue"],
+                rows=data, height=16
+            )
+        except Exception as e:
+            messagebox.showerror("Database Error", f"Failed to load defaulters: {e}")
 
     def _report_ward_collection(self, parent):
-        rows = execute_query(
-            "SELECT ward_number, ward_name, zone, officer_name, "
-            "total_properties, total_demand, total_collected, outstanding "
-            "FROM v_ward_collection_summary",
-            fetch=True
-        )
-        data = [[r["ward_number"], r["ward_name"], r["zone"],
-                 r["officer_name"], r["total_properties"],
-                 f"₹{(r['total_demand'] or 0):,.2f}",
-                 f"₹{(r['total_collected'] or 0):,.2f}",
-                 f"₹{(r['outstanding'] or 0):,.2f}"] for r in rows]
-        self._build_treeview(
-            parent,
-            columns=["Ward #", "Ward Name", "Zone", "Officer",
-                     "Properties", "Total Demand", "Collected", "Outstanding"],
-            rows=data, height=16
-        )
+        try:
+            rows = execute_query(
+                "SELECT ward_number, ward_name, zone, officer_name, "
+                "total_properties, total_demand, total_collected, outstanding "
+                "FROM v_ward_collection_summary",
+                fetch=True
+            )
+            data = [[r["ward_number"], r["ward_name"], r["zone"],
+                     r["officer_name"], r["total_properties"],
+                     f"₹{(r['total_demand'] or 0):,.2f}",
+                     f"₹{(r['total_collected'] or 0):,.2f}",
+                     f"₹{(r['outstanding'] or 0):,.2f}"] for r in rows]
+            self._build_treeview(
+                parent,
+                columns=["Ward #", "Ward Name", "Zone", "Officer",
+                         "Properties", "Total Demand", "Collected", "Outstanding"],
+                rows=data, height=16
+            )
+        except Exception as e:
+            messagebox.showerror("Database Error", f"Failed to load ward collection: {e}")
 
     def _report_annual_revenue(self, parent):
-        rows = execute_query(
-            "SELECT financial_year, properties_assessed, gross_tax_demand, "
-            "total_penalties, total_rebates, net_demand, total_collected, uncollected "
-            "FROM v_annual_revenue",
-            fetch=True
-        )
-        data = [[r["financial_year"], r["properties_assessed"],
-                 f"₹{(r['gross_tax_demand'] or 0):,.2f}",
-                 f"₹{(r['total_penalties'] or 0):,.2f}",
-                 f"₹{(r['total_rebates'] or 0):,.2f}",
-                 f"₹{(r['net_demand'] or 0):,.2f}",
-                 f"₹{(r['total_collected'] or 0):,.2f}",
-                 f"₹{(r['uncollected'] or 0):,.2f}"] for r in rows]
-        self._build_treeview(
-            parent,
-            columns=["FY", "Properties", "Gross Tax", "Penalties",
-                     "Rebates", "Net Demand", "Collected", "Uncollected"],
-            rows=data, height=16
-        )
+        try:
+            rows = execute_query(
+                "SELECT financial_year, properties_assessed, gross_tax_demand, "
+                "total_penalties, total_rebates, net_demand, total_collected, uncollected "
+                "FROM v_annual_revenue",
+                fetch=True
+            )
+            data = [[r["financial_year"], r["properties_assessed"],
+                     f"₹{(r['gross_tax_demand'] or 0):,.2f}",
+                     f"₹{(r['total_penalties'] or 0):,.2f}",
+                     f"₹{(r['total_rebates'] or 0):,.2f}",
+                     f"₹{(r['net_demand'] or 0):,.2f}",
+                     f"₹{(r['total_collected'] or 0):,.2f}",
+                     f"₹{(r['uncollected'] or 0):,.2f}"] for r in rows]
+            self._build_treeview(
+                parent,
+                columns=["FY", "Properties", "Gross Tax", "Penalties",
+                         "Rebates", "Net Demand", "Collected", "Uncollected"],
+                rows=data, height=16
+            )
+        except Exception as e:
+            messagebox.showerror("Database Error", f"Failed to load annual revenue: {e}")
 
     # ─── Admin panel ─────────────────────────────────────
     def _show_admin(self):
@@ -511,24 +558,36 @@ class DashboardWindow(tk.Toplevel):
                       command=cmd, width=20
                       ).grid(row=0, column=i, padx=8, ipady=12)
 
-        # User list
-        tk.Label(self.content, text="Registered Users",
-                 font=FONT_H2, bg=BG_DARK, fg=TEXT_LIGHT).pack(
-                 anchor="w", padx=24, pady=(12, 4))
-        rows = execute_query(
-            "SELECT user_id, username, full_name, role, email, "
-            "IF(is_active,'Active','Inactive') AS status, "
-            "DATE(last_login) AS last_login FROM users ORDER BY role, username",
-            fetch=True
-        )
-        data = [[r["user_id"], r["username"], r["full_name"],
-                 r["role"], r["email"], r["status"],
-                 str(r["last_login"] or "Never")] for r in rows]
-        self._build_treeview(
-            self.content,
-            columns=["ID", "Username", "Full Name", "Role", "Email", "Status", "Last Login"],
-            rows=data, height=10
-        )
+        # User list actions frame
+        user_actions = tk.Frame(self.content, bg=BG_DARK)
+        user_actions.pack(fill="x", padx=20, pady=(12, 4))
+
+        tk.Label(user_actions, text="Registered Users",
+                 font=FONT_H2, bg=BG_DARK, fg=TEXT_LIGHT).pack(side="left")
+
+        tk.Button(user_actions, text="❌ Delete Selected User",
+                  font=FONT_BOLD, bg=DANGER, fg=TEXT_LIGHT,
+                  relief="flat", cursor="hand2",
+                  command=self._delete_user
+                  ).pack(side="right", ipady=2, ipadx=8)
+
+        try:
+            rows = execute_query(
+                "SELECT user_id, username, full_name, role, email, "
+                "IF(is_active,'Active','Inactive') AS status, "
+                "DATE(last_login) AS last_login FROM users ORDER BY role, username",
+                fetch=True
+            )
+            data = [[r["user_id"], r["username"], r["full_name"],
+                     r["role"], r["email"], r["status"],
+                     str(r["last_login"] or "Never")] for r in rows]
+            self.user_tree = self._build_treeview(
+                self.content,
+                columns=["ID", "Username", "Full Name", "Role", "Email", "Status", "Last Login"],
+                rows=data, height=10
+            )
+        except Exception as e:
+            messagebox.showerror("Database Error", f"Failed to load users: {e}")
 
     def _manage_users(self):
         from forms import UserForm
@@ -587,6 +646,114 @@ class DashboardWindow(tk.Toplevel):
         hsb.pack(side="bottom", fill="x")
         tree.pack(fill="both", expand=True)
         return tree
+
+    def _delete_property(self):
+        if not hasattr(self, "prop_tree"):
+            return
+        selected = self.prop_tree.selection()
+        if not selected:
+            messagebox.showwarning("Selection Required", "Please select a property from the list.")
+            return
+        values = self.prop_tree.item(selected[0], "values")
+        prop_num = values[0]
+        
+        if not messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete property '{prop_num}'?"):
+            return
+        
+        try:
+            execute_query("DELETE FROM property WHERE property_number = %s", (prop_num,))
+            messagebox.showinfo("Success", f"Property '{prop_num}' deleted successfully.")
+            self._show_properties()
+        except Exception as e:
+            messagebox.showerror("Error", f"Cannot delete property. It may have associated tax records or payments.\nDetail: {e}")
+
+    def _delete_owner(self):
+        if not hasattr(self, "owner_tree"):
+            return
+        selected = self.owner_tree.selection()
+        if not selected:
+            messagebox.showwarning("Selection Required", "Please select an owner from the list.")
+            return
+        values = self.owner_tree.item(selected[0], "values")
+        owner_id = values[0]
+        owner_name = values[1]
+        
+        if not messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete owner '{owner_name}' (ID: {owner_id})?"):
+            return
+        
+        try:
+            execute_query("DELETE FROM owner WHERE owner_id = %s", (owner_id,))
+            messagebox.showinfo("Success", f"Owner '{owner_name}' deleted successfully.")
+            self._show_owners()
+        except Exception as e:
+            messagebox.showerror("Error", f"Cannot delete owner. They may have registered properties.\nDetail: {e}")
+
+    def _delete_tax_record(self):
+        if not hasattr(self, "tax_tree"):
+            return
+        selected = self.tax_tree.selection()
+        if not selected:
+            messagebox.showwarning("Selection Required", "Please select a tax record from the list.")
+            return
+        values = self.tax_tree.item(selected[0], "values")
+        tax_id = values[0]
+        prop_num = values[1]
+        fy = values[2]
+        
+        if not messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete tax record for property '{prop_num}' (FY {fy})?"):
+            return
+        
+        try:
+            execute_query("DELETE FROM tax_record WHERE tax_id = %s", (tax_id,))
+            messagebox.showinfo("Success", "Tax record deleted successfully.")
+            self._show_tax_records()
+        except Exception as e:
+            messagebox.showerror("Error", f"Cannot delete tax record. It may have associated payments.\nDetail: {e}")
+
+    def _delete_payment(self):
+        if not hasattr(self, "pay_tree"):
+            return
+        selected = self.pay_tree.selection()
+        if not selected:
+            messagebox.showwarning("Selection Required", "Please select a payment record from the list.")
+            return
+        values = self.pay_tree.item(selected[0], "values")
+        receipt = values[0]
+        
+        if not messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete payment '{receipt}'?"):
+            return
+        
+        try:
+            execute_query("DELETE FROM payment WHERE receipt_number = %s", (receipt,))
+            messagebox.showinfo("Success", "Payment record deleted successfully.")
+            self._show_payments()
+        except Exception as e:
+            messagebox.showerror("Error", f"Cannot delete payment. It may be blocked by trigger constraints.\nDetail: {e}")
+
+    def _delete_user(self):
+        if not hasattr(self, "user_tree"):
+            return
+        selected = self.user_tree.selection()
+        if not selected:
+            messagebox.showwarning("Selection Required", "Please select a user from the list.")
+            return
+        values = self.user_tree.item(selected[0], "values")
+        user_id = values[0]
+        username = values[1]
+        
+        if str(username) == self.user["username"]:
+            messagebox.showerror("Error", "You cannot delete your own account.")
+            return
+            
+        if not messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete user '{username}' (ID: {user_id})?"):
+            return
+        
+        try:
+            execute_query("DELETE FROM users WHERE user_id = %s", (user_id,))
+            messagebox.showinfo("Success", f"User '{username}' deleted successfully.")
+            self._show_admin()
+        except Exception as e:
+            messagebox.showerror("Error", f"Cannot delete user.\nDetail: {e}")
 
     def _logout(self):
         if messagebox.askyesno("Logout", "Are you sure you want to logout?"):

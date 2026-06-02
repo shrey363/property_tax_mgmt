@@ -70,6 +70,13 @@ def call_procedure(proc_name: str, args: tuple = ()):
         conn   = get_connection()
         cursor = conn.cursor(dictionary=True)
         result_args = cursor.callproc(proc_name, args)
+        if isinstance(result_args, dict):
+            import re
+            sorted_keys = sorted(
+                result_args.keys(),
+                key=lambda k: int(re.search(r'_arg(\d+)$', k).group(1)) if re.search(r'_arg(\d+)$', k) else 0
+            )
+            result_args = tuple(result_args[k] for k in sorted_keys)
         result_sets = []
         for rs in cursor.stored_results():
             result_sets.append(rs.fetchall())

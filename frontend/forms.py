@@ -72,7 +72,7 @@ class BaseDialog(tk.Toplevel):
         return w
 
     def _save_btn(self, parent, cmd, label="💾 Save"):
-        btn_frame = tk.Frame(parent, bg=BG_CARD)
+        btn_frame = tk.Frame(parent, bg=parent["bg"])
         btn_frame.pack(fill="x", padx=10, pady=14)
         tk.Button(btn_frame, text=label, font=FONT_BOLD,
                   bg=ACCENT, fg=BG_DARK,
@@ -88,7 +88,7 @@ class BaseDialog(tk.Toplevel):
     def _status(self, parent, text="", color=DANGER):
         self.status_var = tk.StringVar(value=text)
         lbl = tk.Label(parent, textvariable=self.status_var,
-                       font=FONT_SMALL, bg=BG_CARD, fg=color,
+                       font=FONT_SMALL, bg=parent["bg"], fg=color,
                        wraplength=460)
         lbl.pack(padx=10, pady=4)
         return lbl
@@ -97,14 +97,14 @@ class BaseDialog(tk.Toplevel):
 # ── Property Form ─────────────────────────────────────────
 class PropertyForm(BaseDialog):
     def __init__(self, parent, user):
-        super().__init__(parent, "Add New Property", width=540, height=640)
+        super().__init__(parent, "Add New Property", width=540, height=720)
         self.user = user
         tk.Label(self, text="Register New Property",
                  font=("Georgia", 14, "bold"),
                  bg=BG_DARK, fg=TEXT_LIGHT).pack(pady=(12, 4))
 
         card = tk.Frame(self, bg=BG_CARD, padx=16, pady=10)
-        card.pack(fill="both", expand=True, padx=16, pady=8)
+        card.pack(fill="both", expand=False, padx=16, pady=8)
         card.columnconfigure(0, weight=1)
         card.columnconfigure(1, weight=1)
 
@@ -144,7 +144,7 @@ class PropertyForm(BaseDialog):
         self._field(card, "Ward", 2, self.ward_var,
                     "combo", list(self.ward_map.keys()), required=True, col=1)
 
-        self._status(card)
+        self._status(self)
         self._save_btn(self, self._save)
 
     def _save(self):
@@ -182,14 +182,14 @@ class PropertyForm(BaseDialog):
 # ── Owner Form ────────────────────────────────────────────
 class OwnerForm(BaseDialog):
     def __init__(self, parent, user):
-        super().__init__(parent, "Add New Owner", width=520, height=580)
+        super().__init__(parent, "Add New Owner", width=520, height=660)
         self.user = user
         tk.Label(self, text="Register New Owner",
                  font=("Georgia", 14, "bold"),
                  bg=BG_DARK, fg=TEXT_LIGHT).pack(pady=(12, 4))
 
         card = tk.Frame(self, bg=BG_CARD, padx=16, pady=10)
-        card.pack(fill="both", expand=True, padx=16, pady=8)
+        card.pack(fill="both", expand=False, padx=16, pady=8)
         card.columnconfigure(0, weight=1)
 
         self.fname_var  = tk.StringVar()
@@ -208,7 +208,7 @@ class OwnerForm(BaseDialog):
         self._field(card, "Aadhar Number",   5, self.aadhar_var, required=True)
         self._field(card, "PAN Number",      6, self.pan_var)
 
-        self._status(card)
+        self._status(self)
         self._save_btn(self, self._save)
 
     def _save(self):
@@ -243,14 +243,14 @@ class OwnerForm(BaseDialog):
 # ── Tax Generate Form ────────────────────────────────────
 class TaxGenerateForm(BaseDialog):
     def __init__(self, parent, user):
-        super().__init__(parent, "Generate Tax Record", width=460, height=400)
+        super().__init__(parent, "Generate Tax Record", width=460, height=460)
         self.user = user
         tk.Label(self, text="Generate / Recalculate Tax",
                  font=("Georgia", 14, "bold"),
                  bg=BG_DARK, fg=TEXT_LIGHT).pack(pady=(12, 4))
 
         card = tk.Frame(self, bg=BG_CARD, padx=16, pady=10)
-        card.pack(fill="both", expand=True, padx=16, pady=8)
+        card.pack(fill="both", expand=False, padx=16, pady=8)
         card.columnconfigure(0, weight=1)
 
         props = execute_query(
@@ -273,7 +273,7 @@ class TaxGenerateForm(BaseDialog):
                  wraplength=400).grid(row=7, column=0,
                  columnspan=2, sticky="w", padx=10, pady=8)
 
-        self._status(card)
+        self._status(self)
         self._save_btn(self, self._generate, label="⚡ Generate Tax")
 
     def _generate(self):
@@ -288,10 +288,14 @@ class TaxGenerateForm(BaseDialog):
         prop_id = self.prop_map.get(prop_num)
         try:
             out, _ = call_procedure("sp_calculate_tax", (prop_id, fy, due, 0, ""))
-            self.result_var.set(out[4])  # message
-            messagebox.showinfo("Success", str(out[4]))
-            self.parent._show_tax_records()
-            self.destroy()
+            msg = out[4]
+            if "ERROR" in str(msg):
+                self.status_var.set(str(msg))
+            else:
+                self.result_var.set(str(msg))
+                messagebox.showinfo("Success", str(msg))
+                self.parent._show_tax_records()
+                self.destroy()
         except Exception as e:
             self.status_var.set(str(e))
 
@@ -299,14 +303,14 @@ class TaxGenerateForm(BaseDialog):
 # ── Payment Form ─────────────────────────────────────────
 class PaymentForm(BaseDialog):
     def __init__(self, parent, user):
-        super().__init__(parent, "Record Payment", width=480, height=480)
+        super().__init__(parent, "Record Payment", width=480, height=540)
         self.user = user
         tk.Label(self, text="Record Tax Payment",
                  font=("Georgia", 14, "bold"),
                  bg=BG_DARK, fg=TEXT_LIGHT).pack(pady=(12, 4))
 
         card = tk.Frame(self, bg=BG_CARD, padx=16, pady=10)
-        card.pack(fill="both", expand=True, padx=16, pady=8)
+        card.pack(fill="both", expand=False, padx=16, pady=8)
         card.columnconfigure(0, weight=1)
 
         # Get pending/partial tax records
@@ -345,7 +349,7 @@ class PaymentForm(BaseDialog):
                  font=FONT_BOLD, bg=BG_CARD, fg=ACCENT
                  ).grid(row=10, column=0, sticky="w", padx=10)
 
-        self._status(card)
+        self._status(self)
         self._save_btn(self, self._save, label="💳 Record Payment")
 
     def _save(self):
@@ -385,14 +389,14 @@ class PaymentForm(BaseDialog):
 # ── User Form (admin only) ────────────────────────────────
 class UserForm(BaseDialog):
     def __init__(self, parent, user):
-        super().__init__(parent, "Add System User", width=480, height=480)
+        super().__init__(parent, "Add System User", width=480, height=540)
         self.user = user
         tk.Label(self, text="Create New User",
                  font=("Georgia", 14, "bold"),
                  bg=BG_DARK, fg=TEXT_LIGHT).pack(pady=(12, 4))
 
         card = tk.Frame(self, bg=BG_CARD, padx=16, pady=10)
-        card.pack(fill="both", expand=True, padx=16, pady=8)
+        card.pack(fill="both", expand=False, padx=16, pady=8)
         card.columnconfigure(0, weight=1)
 
         self.uname_var    = tk.StringVar()
@@ -408,7 +412,7 @@ class UserForm(BaseDialog):
         self._field(card, "Role",      4, self.role_var,
                     "combo", ["clerk", "viewer", "admin"])
 
-        self._status(card)
+        self._status(self)
         self._save_btn(self, self._save)
 
     def _save(self):
@@ -439,14 +443,14 @@ class UserForm(BaseDialog):
 # ── Ward Form (admin only) ────────────────────────────────
 class WardForm(BaseDialog):
     def __init__(self, parent, user):
-        super().__init__(parent, "Add Ward", width=480, height=460)
+        super().__init__(parent, "Add Ward", width=480, height=520)
         self.user = user
         tk.Label(self, text="Register New Ward",
                  font=("Georgia", 14, "bold"),
                  bg=BG_DARK, fg=TEXT_LIGHT).pack(pady=(12, 4))
 
         card = tk.Frame(self, bg=BG_CARD, padx=16, pady=10)
-        card.pack(fill="both", expand=True, padx=16, pady=8)
+        card.pack(fill="both", expand=False, padx=16, pady=8)
         card.columnconfigure(0, weight=1)
 
         self.name_var    = tk.StringVar()
@@ -463,7 +467,7 @@ class WardForm(BaseDialog):
         self._field(card, "Officer Name",  3, self.officer_var, required=True)
         self._field(card, "Contact Email", 4, self.email_var,   required=True)
 
-        self._status(card)
+        self._status(self)
         self._save_btn(self, self._save)
 
     def _save(self):
