@@ -518,10 +518,10 @@ All queries are in `database/05_queries.sql`:
 | Username | Password   | Role   | Access                        |
 |----------|------------|--------|-------------------------------|
 | admin    | admin123  | Admin  | Full access + admin panel     |
-| clerk1   | Clerk@123  | Clerk  | Add/edit properties, payments |
-| clerk2   | Clerk@456  | Clerk  | Add/edit properties, payments |
-| viewer1  | View@123   | Viewer | Read-only access              |
-| viewer2  | View@456   | Viewer | Read-only access              |
+| clerk1   | clerk123  | Clerk  | Add/edit properties, payments |
+| clerk2   | clerk456  | Clerk  | Add/edit properties, payments |
+| viewer1  | view123   | Viewer | Read-only access              |
+| viewer2  | view456  | Viewer | Read-only access              |
 
 > Passwords are stored as SHA-256 hashes. Change them after first login via the Admin Panel.
 
